@@ -3,19 +3,29 @@ FROM alpine:latest
 ARG OVERLAY_VERSION="v1.22.1.0"
 ARG OVERLAY_ARCH="amd64"
 
-ENV DEBUG="false" \
-    GOPATH="/go" \
-    AccessFolder="/mnt" \
-    RemotePath="mediaefs:" \
+ENV AccessFolder="/mnt" \
+    RemotePath="user@127.0.0.1:/home/user" \
     MountPoint="/mnt/mediaefs" \
-    ConfigDir="/config" \
-    ConfigName=".rclone.conf" \
-    MountCommands="--allow-other --allow-non-empty" \
+    MountCommands="-o reconnect \
+                   -o ServerAliveInterval=15 \
+                   -o ServerAliveCountMax=3 \
+                   -o UserKnownHostsFile=/dev/null \
+                   -o StrictHostKeyChecking=no \
+                   -o IdentityFile=${IDENTITY_FILE} \
+                   -o allow_other \
+                   -o auto_unmount \
+                   -o uid="$UID" \
+                   -o gid="$GID" \
+                   -o port="$PORT"" \
+    UID="1000"
+    GID="1000"
+    PORT="22"
+    IDENTITY_FILE="/config/id_rsa"
     UnmountCommands="-u -z"
 
 ## Alpine with Go Git
 RUN apk --no-cache upgrade \
-    && apk add --no-cache --update alpine-sdk ca-certificates go git fuse fuse-dev gnupg \
+    && apk add --no-cache --update alpine-sdk fuse fuse-dev gnupg sshfs \
     && echo "Installing S6 Overlay" \
     && curl -o /tmp/s6-overlay.tar.gz -L \
     "https://github.com/just-containers/s6-overlay/releases/download/${OVERLAY_VERSION}/s6-overlay-${OVERLAY_ARCH}.tar.gz" \
@@ -24,10 +34,6 @@ RUN apk --no-cache upgrade \
     && curl https://keybase.io/justcontainers/key.asc | gpg --import \
     && gpg --verify /tmp/s6-overlay.tar.gz.sig /tmp/s6-overlay.tar.gz \
     && tar xfz /tmp/s6-overlay.tar.gz -C / \
-    && echo "Download and compile rclone" \
-    && go get -u -v github.com/rclone/rclone \
-    && cp /go/bin/rclone /usr/sbin/ \
-    && rm -rf /go || true \
     && apk del alpine-sdk go git gnupg \
     && rm -rf /tmp/* /var/cache/apk/* /var/lib/apk/lists/*
 
