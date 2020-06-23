@@ -4,8 +4,8 @@ source /etc/colors.sh
 
 PREFFIX="[cont-finish.d] $(s6-basename ${0}):"
 
-#s6-svc -d /var/run/s6/services/rclone-mount
-#s6-svc -wD /var/run/s6/services/rclone-mount
+#s6-svc -d /var/run/s6/services/sshfs
+#s6-svc -wD /var/run/s6/services/sshfs
 
 echo -e "${PREFFIX} ${Yellow}waiting for shutdown of all services${Color_Off}"
 #wait for all services to be down
@@ -13,7 +13,7 @@ s6-svwait -D /var/run/s6/services/*
 
 #awk '/efsgoogle:/ && /\'$ENVIRON["MountPoint"]'/ {print; exit 1}' /proc/mounts
 
-#check if rclone gracefully unmounted
+#check if sshfs gracefully unmounted
 if grep -Eq ''$RemotePath'.*'$MountPoint'|'$MountPoint'.*'$RemotePath'' /proc/mounts; then
     echo -e "${PREFFIX} ${Red}force unmounting with fusermount $UnmountCommands at: $(date +%Y.%m.%d-%T)${Color_Off}"
     fusermount $UnmountCommands $MountPoint
