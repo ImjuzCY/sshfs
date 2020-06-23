@@ -1,0 +1,11 @@
+#!/usr/bin/with-contenv sh
+
+#set -x
+
+source /etc/colors.sh
+
+PREFFIX="[services.d] [sshfs]-$(s6-basename ${0}):"
+
+echo -e "${PREFFIX} ${Green}starting sshfs mount $(date +%Y.%m.%d-%T)${Color_Off}"
+
+sshfs -f $MountCommands $RemotePath $MountPoint
